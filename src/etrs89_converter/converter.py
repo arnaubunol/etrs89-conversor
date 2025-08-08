@@ -12,6 +12,7 @@ def convert_dataframe(
     fixed_zone: int | None = None,
     use_decimal_comma: bool = False,
     input_epsg: str = "EPSG:4258",
+    round_decimals: int = 3,
 ):
     """Convert a DataFrame of geographic coordinates to ETRS89/UTM.
 
@@ -33,6 +34,8 @@ def convert_dataframe(
         parsing.
     input_epsg:
         EPSG code of the input geographic coordinates.
+    round_decimals:
+        Number of decimal places to round the output coordinates (default 3).
 
     Returns
     -------
@@ -123,8 +126,8 @@ def convert_dataframe(
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
-    results["X_ETRS89"] = results["X_ETRS89"].round(3)
-    results["Y_ETRS89"] = results["Y_ETRS89"].round(3)
+    results["X_ETRS89"] = results["X_ETRS89"].round(round_decimals)
+    results["Y_ETRS89"] = results["Y_ETRS89"].round(round_decimals)
 
     out = pd.concat(
         [df_out.reset_index(drop=True), results.reset_index(drop=True)],
