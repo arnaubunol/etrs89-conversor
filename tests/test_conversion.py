@@ -39,6 +39,19 @@ def test_decimal_comma_false_raises():
         convert_dataframe(df, "Lat", "Lon", mode="force_31n")
 
 
+@pytest.mark.parametrize(
+    "cols,missing",
+    [
+        ({"Lat": [41.0]}, "Lon"),
+        ({"Lon": [1.0]}, "Lat"),
+    ],
+)
+def test_missing_columns_raise(cols, missing):
+    df = pd.DataFrame(cols)
+    with pytest.raises(ValueError, match=missing):
+        convert_dataframe(df, "Lat", "Lon", mode="force_31n")
+
+
 def test_auto_multiple_zones():
     df = pd.DataFrame(
         {"Lat": [43.0, 40.0, 41.5], "Lon": [-8.0, -3.0, 1.5]}
