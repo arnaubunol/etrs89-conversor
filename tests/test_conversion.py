@@ -154,3 +154,10 @@ def test_fixed_mode_requires_zone():
         convert_dataframe(df, "Lat", "Lon", mode="fixed")
 
 
+@pytest.mark.parametrize("zone", [28, 32])
+def test_fixed_mode_zone_out_of_range_raises(zone):
+    df = pd.DataFrame({"Lat": [40.0], "Lon": [-3.0]})
+    with pytest.raises(ValueError, match="29, 30, or 31"):
+        convert_dataframe(df, "Lat", "Lon", mode="fixed", fixed_zone=zone)
+
+
