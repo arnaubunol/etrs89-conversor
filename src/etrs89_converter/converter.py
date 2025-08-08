@@ -74,9 +74,8 @@ def convert_dataframe(
     lat_v = lat_s[valid].values
     lon_v = lon_s[valid].values
 
-    results = pd.DataFrame(index=df_out.index)
-
     if mode == "force_31n":
+        results = pd.DataFrame(index=df_out.index)
         transformer = Transformer.from_crs(
             input_epsg, "EPSG:25831", always_xy=True
         )
@@ -129,6 +128,7 @@ def convert_dataframe(
         results["Huso"] = husos
 
     elif mode == "fixed":
+        results = pd.DataFrame(index=df_out.index)
         if fixed_zone is None:
             raise ValueError("fixed_zone must be provided when mode='fixed'")
         if fixed_zone not in (29, 30, 31):
