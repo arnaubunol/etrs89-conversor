@@ -3,7 +3,12 @@ import pytest
 from pyproj import Transformer
 from pyproj.exceptions import ProjError
 
-from etrs89_converter.converter import convert_dataframe
+from etrs89_converter.converter import _get_transformer, convert_dataframe
+
+
+@pytest.fixture(autouse=True)
+def clear_transformer_cache():
+    _get_transformer.cache_clear()
 
 
 def test_forzar_31n_sample():
