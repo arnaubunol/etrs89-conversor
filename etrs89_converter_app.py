@@ -27,7 +27,12 @@ uploaded = st.file_uploader("Sube un archivo CSV o Excel", type=["csv", "xlsx", 
 
 # Opciones de lectura CSV
 is_csv = False
-sep_map = {"Auto (, por defecto)": None, "Coma (,)": ",", "Punto y coma (;)": ";", "Tabulación (TAB)": "\t"}
+sep_map = {
+    "Auto (detectar automáticamente)": None,
+    "Coma (,)": ",",
+    "Punto y coma (;)": ";",
+    "Tabulación (TAB)": "\t",
+}
 encodings = ["utf-8", "latin-1", "cp1252"]
 
 if uploaded is not None:
@@ -35,14 +40,19 @@ if uploaded is not None:
     if name.endswith(".csv"):
         is_csv = True
         st.markdown("### Opciones de lectura (CSV)")
-        sel_sep = st.selectbox("Separador", options=list(sep_map.keys()), index=0)
+        sel_sep = st.selectbox(
+            "Separador (Auto detecta)", options=list(sep_map.keys()), index=0
+        )
         sep = sep_map[sel_sep]
         enc = st.selectbox("Encoding", options=encodings, index=0)
 
     # Leer archivo
     try:
         if is_csv:
-            df = pd.read_csv(uploaded, sep=sep if sep else ",", encoding=enc)
+            if sep is None:
+                df = pd.read_csv(uploaded, sep=None, engine="python", encoding=enc)
+            else:
+                df = pd.read_csv(uploaded, sep=sep, encoding=enc)
         else:
             df = pd.read_excel(uploaded)  # requiere openpyxl
     except Exception as e:
