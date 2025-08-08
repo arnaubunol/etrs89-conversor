@@ -1,8 +1,5 @@
 
-import math
-import io
 import pandas as pd
-from pyproj import Transformer
 import streamlit as st
 
 from converter import convert_dataframe
