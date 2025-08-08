@@ -5,6 +5,8 @@ import pandas as pd
 from pyproj import Transformer
 import streamlit as st
 
+from converter import convert_dataframe
+
 st.set_page_config(page_title="Conversor Lat/Lon → ETRS89 / UTM", layout="centered")
 
 st.title("Conversor de Lat/Lon a **ETRS89 / UTM**")
@@ -81,7 +83,7 @@ if uploaded is not None:
 
     st.markdown("---")
     st.subheader("Salida")
-    mode = st.radio(
+    mode_choice = st.radio(
         "Elige el modo de salida",
         [
             "Forzar **ETRS89 / UTM 31N (EPSG:25831)**",
@@ -91,82 +93,32 @@ if uploaded is not None:
         index=0
     )
     fixed_zone = None
-    if "Fijar huso manual" in mode:
+    if "Fijar huso manual" in mode_choice:
         fixed_zone = st.selectbox("Huso UTM", options=[29, 30, 31], index=1)  # 30 por defecto
 
+
     if st.button("Convertir"):
-        df2 = df.copy()
-
-        # Parseo robusto de lat/lon
-        def to_float_series(s):
-            s = s.astype(str)
-            if use_decimal_comma:
-                s = s.str.replace(",", ".", regex=False)
-            return pd.to_numeric(s, errors="coerce")
-
-        lat_s = to_float_series(df2[lat_col])
-        lon_s = to_float_series(df2[lon_col])
-
-        # Filtro de filas válidas
-        valid = lat_s.between(-90, 90) & lon_s.between(-180, 180)
-        n_all = len(df2)
-        n_valid = int(valid.sum())
-        n_drop = n_all - n_valid
-
-        if n_valid == 0:
-            st.error("No hay filas válidas con latitudes/longitudes en rango. Revisa columnas, separador/encoding y formato decimal.")
+        try:
+            out, n_valid, n_drop = convert_dataframe(
+                df,
+                lat_col,
+                lon_col,
+                mode=(
+                    "force_31n"
+                    if "Forzar" in mode_choice
+                    else "auto" if "Auto" in mode_choice else "fixed"
+                ),
+                fixed_zone=fixed_zone,
+                use_decimal_comma=use_decimal_comma,
+                input_epsg=input_epsg,
+            )
+        except ValueError as e:
+            st.error(str(e))
             st.stop()
 
-        df_out = df2.loc[valid].copy()
-        lat_v = lat_s[valid].values
-        lon_v = lon_s[valid].values
-
-        results = pd.DataFrame(index=df_out.index)
-
-        if "Forzar" in mode:
-            transformer = Transformer.from_crs(input_epsg, "EPSG:25831", always_xy=True)
-            x, y = transformer.transform(lon_v, lat_v)
-            results["X_ETRS89"] = x
-            results["Y_ETRS89"] = y
-            results["EPSG_destino"] = "EPSG:25831"
-            results["Huso"] = 31
-
-        elif "Auto por huso" in mode:
-            # España: husos 29/30/31. Calculamos desde longitud.
-            zones = ((lon_v + 180.0) // 6.0).astype(int) + 1
-            xs, ys, epsgs, husos = [], [], [], []
-            for lon, lat, zone in zip(lon_v, lat_v, zones):
-                # Limitar a 29..31 para España; si cae fuera, aproximamos al más cercano
-                if zone < 29: zone = 29
-                if zone > 31: zone = 31
-                epsg = f"EPSG:258{int(zone):02d}"
-                try:
-                    transformer = Transformer.from_crs(input_epsg, epsg, always_xy=True)
-                    x, y = transformer.transform(lon, lat)
-                except Exception:
-                    x, y = float("nan"), float("nan")
-                xs.append(x); ys.append(y); epsgs.append(epsg); husos.append(int(zone))
-            results["X_ETRS89"] = xs
-            results["Y_ETRS89"] = ys
-            results["EPSG_destino"] = epsgs
-            results["Huso"] = husos
-
-        else:  # Fijar huso manual
-            epsg = f"EPSG:258{int(fixed_zone):02d}"
-            transformer = Transformer.from_crs(input_epsg, epsg, always_xy=True)
-            x, y = transformer.transform(lon_v, lat_v)
-            results["X_ETRS89"] = x
-            results["Y_ETRS89"] = y
-            results["EPSG_destino"] = epsg
-            results["Huso"] = int(fixed_zone)
-
-        # Redondeo visual (3 decimales)
-        results["X_ETRS89"] = results["X_ETRS89"].round(3)
-        results["Y_ETRS89"] = results["Y_ETRS89"].round(3)
-
-        out = pd.concat([df_out.reset_index(drop=True), results.reset_index(drop=True)], axis=1)
-
-        st.success(f"Conversión completada. {n_valid} filas válidas; {n_drop} descartadas por lat/lon inválidas.")
+        st.success(
+            f"Conversión completada. {n_valid} filas válidas; {n_drop} descartadas por lat/lon inválidas."
+        )
         st.write(out.head())
 
         csv_bytes = out.to_csv(index=False).encode("utf-8")
@@ -174,9 +126,11 @@ if uploaded is not None:
             "Descargar CSV convertido",
             data=csv_bytes,
             file_name="convertido_ETRS89_UTM.csv",
-            mime="text/csv"
+            mime="text/csv",
         )
 
-        st.info("Para Lleida/Cataluña: usa **Forzar 31N (EPSG:25831)**. Ejemplo (1.03335, 41.84346) → X=336724.563, Y=4634265.720, Huso=31.")
+        st.info(
+            "Para Lleida/Cataluña: usa **Forzar 31N (EPSG:25831)**. Ejemplo (1.03335, 41.84346) → X=336724.563, Y=4634265.720, Huso=31."
+        )
     else:
         st.caption("Configura opciones y pulsa **Convertir**.")
