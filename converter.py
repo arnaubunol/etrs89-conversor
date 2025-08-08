@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from pyproj import Transformer
 
@@ -78,25 +79,25 @@ def convert_dataframe(
         results["Huso"] = 31
 
     elif mode == "auto":
-        zones = ((lon_v + 180.0) // 6.0).astype(int) + 1
-        xs, ys, epsgs, husos = [], [], [], []
-        for lon, lat, zone in zip(lon_v, lat_v, zones):
-            if zone < 29:
-                zone = 29
-            if zone > 31:
-                zone = 31
+        zones = np.clip(((lon_v + 180.0) // 6.0).astype(int) + 1, 29, 31)
+        xs = np.full_like(lon_v, np.nan, dtype=float)
+        ys = np.full_like(lat_v, np.nan, dtype=float)
+        epsgs = np.empty(len(zones), dtype=object)
+        husos = zones.astype(int)
+        for zone in np.unique(zones):
             epsg = f"EPSG:258{int(zone):02d}"
+            mask = zones == zone
             try:
                 transformer = Transformer.from_crs(
                     input_epsg, epsg, always_xy=True
                 )
-                x, y = transformer.transform(lon, lat)
+                x, y = transformer.transform(lon_v[mask], lat_v[mask])
             except Exception:
-                x, y = float("nan"), float("nan")
-            xs.append(x)
-            ys.append(y)
-            epsgs.append(epsg)
-            husos.append(int(zone))
+                x = np.full(mask.sum(), np.nan)
+                y = np.full(mask.sum(), np.nan)
+            xs[mask] = x
+            ys[mask] = y
+            epsgs[mask] = epsg
         results["X_ETRS89"] = xs
         results["Y_ETRS89"] = ys
         results["EPSG_destino"] = epsgs
