@@ -113,6 +113,8 @@ def convert_dataframe(
     elif mode == "fixed":
         if fixed_zone is None:
             raise ValueError("fixed_zone must be provided when mode='fixed'")
+        if fixed_zone not in (29, 30, 31):
+            raise ValueError("fixed_zone must be one of 29, 30, or 31")
         epsg = f"EPSG:258{int(fixed_zone):02d}"
         transformer = Transformer.from_crs(
             input_epsg, epsg, always_xy=True
