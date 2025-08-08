@@ -1,7 +1,14 @@
 import numpy as np
 import pandas as pd
+from functools import lru_cache
 from pyproj import Transformer
 from pyproj.exceptions import ProjError
+
+
+@lru_cache(maxsize=None)
+def _get_transformer(input_epsg: str, output_epsg: str) -> Transformer:
+    """Return a cached ``Transformer`` for the given CRS pair."""
+    return Transformer.from_crs(input_epsg, output_epsg, always_xy=True)
 
 
 def convert_dataframe(
@@ -76,9 +83,7 @@ def convert_dataframe(
 
     if mode == "force_31n":
         results = pd.DataFrame(index=df_out.index)
-        transformer = Transformer.from_crs(
-            input_epsg, "EPSG:25831", always_xy=True
-        )
+        transformer = _get_transformer(input_epsg, "EPSG:25831")
         x, y = transformer.transform(lon_v, lat_v)
         results["X_ETRS89"] = x
         results["Y_ETRS89"] = y
@@ -97,9 +102,7 @@ def convert_dataframe(
             epsg = f"EPSG:258{int(zone):02d}"
             mask = zones == zone
             try:
-                transformer = Transformer.from_crs(
-                    input_epsg, epsg, always_xy=True
-                )
+                transformer = _get_transformer(input_epsg, epsg)
                 x, y = transformer.transform(lon_v[mask], lat_v[mask])
             except ProjError as exc:  # pragma: no cover - handled in tests
                 failed[mask] = True
@@ -134,9 +137,7 @@ def convert_dataframe(
         if fixed_zone not in (29, 30, 31):
             raise ValueError("fixed_zone must be one of 29, 30, or 31")
         epsg = f"EPSG:258{int(fixed_zone):02d}"
-        transformer = Transformer.from_crs(
-            input_epsg, epsg, always_xy=True
-        )
+        transformer = _get_transformer(input_epsg, epsg)
         x, y = transformer.transform(lon_v, lat_v)
         results["X_ETRS89"] = x
         results["Y_ETRS89"] = y
