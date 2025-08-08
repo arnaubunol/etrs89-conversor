@@ -68,7 +68,8 @@ if uploaded is not None:
     lat_col = st.selectbox("Columna de **Latitud**", options=cols, index=lat_idx)
     lon_col = st.selectbox("Columna de **Longitud**", options=cols, index=lon_idx)
 
-    use_decimal_comma = st.checkbox("Mis lat/lon usan **coma decimal** (ej. 41,84346)", value=True)
+    # Marca esta casilla si las coordenadas usan coma como separador decimal
+    use_decimal_comma = st.checkbox("Mis lat/lon usan **coma decimal** (ej. 41,84346)", value=False)
 
     st.markdown("### Datum de **entrada** (lat/lon)")
     assume_input = st.selectbox(
