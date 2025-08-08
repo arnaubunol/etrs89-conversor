@@ -1,12 +1,8 @@
-import sys
-from pathlib import Path
-
 import pandas as pd
 import pytest
 from pyproj import Transformer
 
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-from converter import convert_dataframe
+from etrs89_converter.converter import convert_dataframe
 
 
 def test_forzar_31n_sample():

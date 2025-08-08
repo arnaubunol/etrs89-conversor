@@ -2,7 +2,7 @@
 import pandas as pd
 import streamlit as st
 
-from converter import convert_dataframe
+from etrs89_converter.converter import convert_dataframe
 
 st.set_page_config(page_title="Conversor Lat/Lon → ETRS89 / UTM", layout="centered")
 
