@@ -36,10 +36,14 @@ def convert_dataframe(
 
     Returns
     -------
-    Tuple[pd.DataFrame, int, int]
+        Tuple[pd.DataFrame, int, int]
         The converted DataFrame along with the number of valid rows and the
         number of discarded rows.
     """
+    if lat_col not in df.columns:
+        raise ValueError(f"Column '{lat_col}' not found in DataFrame")
+    if lon_col not in df.columns:
+        raise ValueError(f"Column '{lon_col}' not found in DataFrame")
 
     df2 = df.copy()
 
