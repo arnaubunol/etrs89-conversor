@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 from pyproj import Transformer
+from pyproj.exceptions import ProjError
 
 from etrs89_converter.converter import convert_dataframe
 
@@ -159,5 +160,33 @@ def test_fixed_mode_zone_out_of_range_raises(zone):
     df = pd.DataFrame({"Lat": [40.0], "Lon": [-3.0]})
     with pytest.raises(ValueError, match="29, 30, or 31"):
         convert_dataframe(df, "Lat", "Lon", mode="fixed", fixed_zone=zone)
+
+
+def test_auto_projerror_drops_rows(monkeypatch):
+    df = pd.DataFrame({"Lat": [43.0, 40.0, 41.5], "Lon": [-8.0, -3.0, 1.5]})
+    original_from_crs = Transformer.from_crs
+
+    def failing_from_crs(src, dest, always_xy=True):
+        if dest == "EPSG:25830":
+            raise ProjError("failure for zone 30")
+        return original_from_crs(src, dest, always_xy=always_xy)
+
+    monkeypatch.setattr(Transformer, "from_crs", staticmethod(failing_from_crs))
+    out, n_valid, n_drop = convert_dataframe(df, "Lat", "Lon", mode="auto")
+    assert n_valid == 2
+    assert n_drop == 1
+    assert out["Huso"].tolist() == [29, 31]
+
+
+def test_auto_projerror_all_rows_raise():
+    df = pd.DataFrame({"Lat": [43.0], "Lon": [-8.0]})
+    with pytest.raises(ValueError, match="Coordinate transformation failed"):
+        convert_dataframe(
+            df,
+            "Lat",
+            "Lon",
+            mode="auto",
+            input_epsg="EPSG:999999",
+        )
 
 

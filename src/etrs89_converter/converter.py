@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from pyproj import Transformer
+from pyproj.exceptions import ProjError
 
 
 def convert_dataframe(
@@ -91,6 +92,8 @@ def convert_dataframe(
         ys = np.full_like(lat_v, np.nan, dtype=float)
         epsgs = np.empty(len(zones), dtype=object)
         husos = zones.astype(int)
+        failed = np.zeros(len(zones), dtype=bool)
+        last_error: ProjError | None = None
         for zone in np.unique(zones):
             epsg = f"EPSG:258{int(zone):02d}"
             mask = zones == zone
@@ -99,12 +102,27 @@ def convert_dataframe(
                     input_epsg, epsg, always_xy=True
                 )
                 x, y = transformer.transform(lon_v[mask], lat_v[mask])
-            except Exception:
-                x = np.full(mask.sum(), np.nan)
-                y = np.full(mask.sum(), np.nan)
+            except ProjError as exc:  # pragma: no cover - handled in tests
+                failed[mask] = True
+                last_error = exc
+                continue
             xs[mask] = x
             ys[mask] = y
             epsgs[mask] = epsg
+        if failed.any():
+            n_fail = int(failed.sum())
+            df_out = df_out.loc[~failed].copy()
+            xs = xs[~failed]
+            ys = ys[~failed]
+            epsgs = epsgs[~failed]
+            husos = husos[~failed]
+            n_valid -= n_fail
+            n_drop += n_fail
+            if n_valid == 0:
+                raise ValueError(
+                    f"Coordinate transformation failed for all rows: {last_error}"
+                )
+        results = pd.DataFrame(index=df_out.index)
         results["X_ETRS89"] = xs
         results["Y_ETRS89"] = ys
         results["EPSG_destino"] = epsgs
