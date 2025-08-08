@@ -1,0 +1,12 @@
+# Entornos y artefactos de Python
+.venv/
+env/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Sistema
+.DS_Store
+Thumbs.db
