@@ -1,6 +1,6 @@
 # Conversor Lat/Lon → ETRS89 / UTM (Streamlit)
 
-App web para convertir coordenadas **geográficas** (latitud/longitud) a coordenadas planas **X,Y en metros** usando **ETRS89 / UTM**.
+App web para convertir coordenadas **geográficas** (latitud/longitud) a coordenadas planas **X, Y en metros** usando **ETRS89 / UTM**.
 Pensada para Lleida y España: por defecto asume **ETRS89 geográficas (EPSG:4258)** y permite salida en **UTM 31N (EPSG:25831)** u otros husos.
 
 ---
