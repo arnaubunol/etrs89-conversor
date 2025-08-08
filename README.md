@@ -58,6 +58,20 @@ Se abrirá en `http://localhost:8501`.
 
 ---
 
+## 💻 Uso en Python
+
+```python
+import pandas as pd
+from etrs89_converter.converter import convert_dataframe
+
+df = pd.DataFrame({"Lat": [41.84346], "Lon": [1.03335]})
+out, _, _ = convert_dataframe(df, "Lat", "Lon", mode="force_31n", round_decimals=2)
+```
+
+El parámetro `round_decimals` permite fijar la precisión de salida (por defecto 3 decimales).
+
+---
+
 ## 🛠️ Consejos y resolución de problemas
 - **Resultados inesperados**: Revisa que **no hayas intercambiado lat/lon**, que el **datum** sea correcto y la **coma decimal** esté marcada si aplica.
 - **Coordenadas fuera de España**: El modo *Auto por huso* limita a 29–31N. Para otras zonas, usa *Fijar huso manual*.

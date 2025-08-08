@@ -35,6 +35,22 @@ def test_decimal_comma_false_raises():
         convert_dataframe(df, "Lat", "Lon", mode="force_31n")
 
 
+def test_round_decimals_changes_precision():
+    df = pd.DataFrame({"Lat": [41.84346], "Lon": [1.03335]})
+    out2, _, _ = convert_dataframe(
+        df, "Lat", "Lon", mode="force_31n", round_decimals=2
+    )
+    out4, _, _ = convert_dataframe(
+        df, "Lat", "Lon", mode="force_31n", round_decimals=4
+    )
+    row2 = out2.loc[0]
+    row4 = out4.loc[0]
+    assert row2["X_ETRS89"] == 336724.56
+    assert row2["Y_ETRS89"] == 4634265.72
+    assert row4["X_ETRS89"] == 336724.5628
+    assert row4["Y_ETRS89"] == 4634265.7204
+
+
 @pytest.mark.parametrize(
     "cols,missing",
     [
