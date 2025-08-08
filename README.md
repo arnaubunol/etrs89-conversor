@@ -69,11 +69,16 @@ Se abrirá en `http://localhost:8501`.
 ## 🗂️ Estructura del repo
 ```
 .
+├── .devcontainer/
 ├── etrs89_converter_app.py
+├── packages.txt
+├── python-version
 ├── requirements.txt
-├── README.md
-└── .gitignore
+├── runtime.txt
+└── README.md
 ```
+
+Opcional: `.gitignore`
 
 ---
 
