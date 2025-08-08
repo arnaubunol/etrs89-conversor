@@ -21,7 +21,7 @@ def convert_dataframe(
     use_decimal_comma: bool = False,
     input_epsg: str = "EPSG:4258",
     round_decimals: int = 3,
-):
+) -> tuple[pd.DataFrame, int, int]:
     """Convert a DataFrame of geographic coordinates to ETRS89/UTM.
 
     Parameters
@@ -47,9 +47,10 @@ def convert_dataframe(
 
     Returns
     -------
-        Tuple[pd.DataFrame, int, int]
-        The converted DataFrame along with the number of valid rows and the
-        number of discarded rows.
+    tuple[pd.DataFrame, int, int]
+        converted_df: The converted DataFrame.
+        n_valid: Number of valid rows.
+        n_drop: Number of discarded rows.
     """
     if lat_col not in df.columns:
         raise ValueError(f"Column '{lat_col}' not found in DataFrame")
