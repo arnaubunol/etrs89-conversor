@@ -190,3 +190,20 @@ def test_auto_projerror_all_rows_raise():
         )
 
 
+def test_invalid_lat_lon_rows_dropped():
+    df = pd.DataFrame(
+        {
+            "Lat": [41.84346, 100.0, 41.0],
+            "Lon": [1.03335, -3.0, 200.0],
+        }
+    )
+    out, n_valid, n_drop = convert_dataframe(df, "Lat", "Lon", mode="force_31n")
+    assert n_valid == 1
+    assert n_drop == 2
+    assert len(out) == 1
+    row = out.loc[0]
+    assert row["Huso"] == 31
+    assert row["X_ETRS89"] == pytest.approx(336724.563, abs=0.001)
+    assert row["Y_ETRS89"] == pytest.approx(4634265.720, abs=0.001)
+
+
