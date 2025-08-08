@@ -141,3 +141,45 @@ def test_fixed_mode_requires_zone():
     with pytest.raises(ValueError):
         convert_dataframe(df, "Lat", "Lon", mode="fixed")
 
+
+def test_auto_mode_boundaries_selection():
+    """Auto mode picks the correct UTM zone for boundary longitudes."""
+    df = pd.DataFrame({"Lat": [40.0, 40.0, 40.0], "Lon": [-12.0, -6.0, 0.0]})
+    out, n_valid, n_drop = convert_dataframe(df, "Lat", "Lon", mode="auto")
+    assert n_valid == 3
+    assert n_drop == 0
+    assert out["Huso"].tolist() == [29, 30, 31]
+
+
+def test_auto_mode_clamps_out_of_range_longitudes():
+    """Auto mode clamps longitudes outside 29–31 to the valid range."""
+    df = pd.DataFrame({"Lat": [40.0, 40.0], "Lon": [-25.0, 9.0]})
+    out, n_valid, n_drop = convert_dataframe(df, "Lat", "Lon", mode="auto")
+    assert n_valid == 2
+    assert n_drop == 0
+    assert out["Huso"].tolist() == [29, 31]
+
+
+def test_fixed_mode_returns_expected_coordinates():
+    """Fixed mode converts to the requested UTM zone with correct coordinates."""
+    df = pd.DataFrame({"Lat": [40.0], "Lon": [-3.0]})
+    out, n_valid, n_drop = convert_dataframe(
+        df, "Lat", "Lon", mode="fixed", fixed_zone=30
+    )
+    assert n_valid == 1
+    assert n_drop == 0
+    row = out.loc[0]
+    assert row["Huso"] == 30
+    transformer = Transformer.from_crs("EPSG:4258", "EPSG:25830", always_xy=True)
+    x, y = transformer.transform(-3.0, 40.0)
+    assert row["X_ETRS89"] == pytest.approx(x, abs=0.001)
+    assert row["Y_ETRS89"] == pytest.approx(y, abs=0.001)
+    assert row["EPSG_destino"] == "EPSG:25830"
+
+
+def test_fixed_mode_missing_zone_raises_value_error():
+    """Omitting fixed_zone in fixed mode results in a ValueError."""
+    df = pd.DataFrame({"Lat": [40.0], "Lon": [-3.0]})
+    with pytest.raises(ValueError):
+        convert_dataframe(df, "Lat", "Lon", mode="fixed")
+
